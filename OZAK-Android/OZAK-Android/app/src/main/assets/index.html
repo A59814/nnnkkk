@@ -1,0 +1,70 @@
+<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0a0c"><title>OZAK</title>
+<style>
+:root{--bg:#0a0a0c;--panel:#15151b;--gold:#d4af37;--champ:#ead9a5;--muted:#9b958a;--line:#39301c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f7f2e7;font-family:system-ui,'Noto Sans Arabic',sans-serif}
+header{padding:24px 22px 15px;border-bottom:1px solid #332b19;display:flex;justify-content:space-between;align-items:center}
+.brand{font: bold 27px Georgia;color:var(--gold);letter-spacing:5px}.sub{font-size:12px;color:var(--muted)}
+.logo{border:1px solid var(--gold);border-radius:50%;width:42px;height:42px;display:grid;place-items:center;color:var(--gold);font:24px Georgia}
+main{padding:18px 18px 100px;max-width:560px;margin:auto}
+.card{background:linear-gradient(145deg,#1a1a20,#111116);border:1px solid #3a301d;border-radius:20px;padding:19px;margin:0 0 16px;box-shadow:0 12px 35px #0005}
+h2{font-size:18px;margin:0 0 12px;color:var(--champ)}.muted{color:var(--muted);font-size:13px}
+button{font:inherit;cursor:pointer}.gold{width:100%;border:0;border-radius:14px;padding:15px;background:linear-gradient(120deg,var(--champ),var(--gold));color:#17130a;font-weight:800;margin-top:10px}
+.outline{border:1px solid var(--gold);border-radius:13px;padding:12px 15px;background:transparent;color:var(--gold)}
+input{width:100%;padding:13px;margin:7px 0 12px;background:#0d0d11;color:white;border:1px solid #40351e;border-radius:12px;font:inherit}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.appt{padding:13px;border:1px solid #38301f;border-radius:14px;margin:9px 0;background:#111116;display:flex;justify-content:space-between;gap:10px}
+.appt strong{display:block}.appt small{color:var(--gold)}.appt button{background:transparent;border:0;color:#c77}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#101014ed;border-top:1px solid #3a301d;padding:9px;backdrop-filter:blur(16px)}
+nav button{flex:1;background:none;border:0;color:var(--muted);padding:8px;font-size:12px}nav button.active{color:var(--gold)}
+.page{display:none}.page.active{display:block}.hero{text-align:center;padding:20px 0}.hero .big{font:42px Georgia;color:var(--gold)}
+</style></head><body>
+<header><div><div class="brand">OZAK</div><div class="sub" id="welcome">لحظاتك، بذهبها</div></div><div class="logo">O</div></header>
+<main>
+<section class="page active" id="home">
+<div class="hero"><div class="big">OZAK</div><div class="muted">وقتك يستحق الاهتمام</div></div>
+<div class="card"><h2>الفقاعة العائمة</h2><p class="muted">تظهر فوق التطبيقات الأخرى بعد منح الإذن.</p><button class="outline" onclick="enableBubble()">تفعيل الفقاعة</button> <button class="outline" onclick="disableBubble()">إخفاء</button></div>
+<div class="card"><h2>أضف موعداً</h2>
+<label class="muted">عنوان الموعد</label><input id="title" placeholder="مثلاً: موعد الطبيب">
+<div class="grid"><div><label class="muted">التاريخ</label><input id="date" type="date"></div><div><label class="muted">الوقت</label><input id="time" type="time"></div></div>
+<button class="gold" onclick="addAppointment()">حفظ الموعد والمنبه</button>
+<p class="muted">يمكنك أيضاً تجربة الإدخال الصوتي إذا كان متاحاً في جهازك.</p>
+<button class="outline" onclick="voiceAdd()">إضافة بالصوت</button></div>
+<div class="card"><h2>أقرب موعد</h2><div id="next" class="muted">لا توجد مواعيد قادمة</div></div>
+</section>
+<section class="page" id="appointments"><div class="card"><h2>مواعيدي</h2><div id="list"></div></div></section>
+<section class="page" id="settings"><div class="card"><h2>الإعدادات</h2><p class="muted">OZAK — إصدار تجريبي أولي</p><button class="outline" onclick="enableBubble()">السماح بالفقاعة العائمة</button><p class="muted">تأكد من السماح بالإشعارات والمنبهات الدقيقة من إعدادات Android.</p></div></section>
+</main>
+<nav><button class="active" onclick="page('home',this)">الرئيسية</button><button onclick="page('appointments',this)">المواعيد</button><button onclick="page('settings',this)">الإعدادات</button></nav>
+<script>
+const KEY='ozak-native-items';let items=[];
+try{items=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
+function persist(){localStorage.setItem(KEY,JSON.stringify(items));render()}
+function page(id,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
+function addAppointment(){
+ const title=document.getElementById('title').value.trim(),d=document.getElementById('date').value,t=document.getElementById('time').value;
+ if(!title||!d||!t){alert('أدخل العنوان والتاريخ والوقت');return}
+ const when=new Date(d+'T'+t).getTime();if(when<=Date.now()){alert('اختر وقتاً في المستقبل');return}
+ const a={id:'ozak-'+Date.now(),title,time:when};items.push(a);persist();
+ if(window.AndroidBridge)AndroidBridge.scheduleAlarm(a.id,a.time,a.title);
+ document.getElementById('title').value='';alert('تم حفظ الموعد وجدولة المنبه');
+}
+function removeItem(id){items=items.filter(x=>x.id!==id);if(window.AndroidBridge)AndroidBridge.cancelAlarm(id);persist()}
+function render(){
+ const future=items.filter(x=>x.time>Date.now()).sort((a,b)=>a.time-b.time);
+ document.getElementById('next').textContent=future.length?future[0].title+' — '+new Date(future[0].time).toLocaleString('ar'): 'لا توجد مواعيد قادمة';
+ const list=document.getElementById('list');list.replaceChildren();
+ const sorted=items.slice().sort((a,b)=>a.time-b.time);
+ if(!sorted.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='لا توجد مواعيد بعد.';list.appendChild(empty)}
+ sorted.forEach(a=>{const card=document.createElement('div');card.className='appt';const info=document.createElement('div');const strong=document.createElement('strong');strong.textContent=a.title;const small=document.createElement('small');small.textContent=new Date(a.time).toLocaleString('ar');info.append(strong,small);const del=document.createElement('button');del.textContent='حذف';del.onclick=()=>removeItem(a.id);card.append(info,del);list.appendChild(card)});
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function enableBubble(){if(window.AndroidBridge)AndroidBridge.showBubble();else alert('هذه الميزة تعمل داخل تطبيق Android')}
+function disableBubble(){if(window.AndroidBridge)AndroidBridge.hideBubble()}
+function voiceAdd(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){alert('الإدخال الصوتي غير متاح في هذا الجهاز حالياً');return}
+ const r=new SR();r.lang='ar-DZ';r.onresult=e=>{document.getElementById('title').value=e.results[0][0].transcript};r.start();
+}
+render();
+</script></body></html>
